@@ -1,4 +1,5 @@
 import asyncio, asyncssh, os, subprocess, sys, pty, fcntl, termios, struct
+import threading
 import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
@@ -12,6 +13,29 @@ _handler = RotatingFileHandler(LOG_PATH, maxBytes=1_000_000, backupCount=3)
 _formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
 _handler.setFormatter(_formatter)
 logging.basicConfig(level=logging.INFO, handlers=[_handler])
+
+# limit max concurrent sessions to 20
+MAX_SESSIONS = 20
+_active_sessions = 0
+_active_sessions_lock = threading.Lock()
+
+def _get_active_sessions():
+    with _active_sessions_lock:
+        return _active_sessions
+
+def _try_reserve_session():
+    global _active_sessions
+    with _active_sessions_lock:
+        if _active_sessions >= MAX_SESSIONS:
+            return False
+        _active_sessions += 1
+        return True
+
+def _release_session():
+    global _active_sessions
+    with _active_sessions_lock:
+        if _active_sessions > 0:
+            _active_sessions -= 1
 
 class Server(asyncssh.SSHServer):
     def __init__(self):
@@ -50,7 +74,24 @@ class Server(asyncssh.SSHServer):
         return super().connection_lost(exc)
     
     def session_requested(self):
-        return AppSession()
+        if not _try_reserve_session():
+            logging.info(
+                "session rejected user=%s client=%s reason=%s active=%s max=%s",
+                self._username,
+                self._peer,
+                "max_sessions_reached",
+                _get_active_sessions(),
+                MAX_SESSIONS,
+            )
+            return False
+        logging.info(
+            "session accepted user=%s client=%s active=%s max=%s",
+            self._username,
+            self._peer,
+            _get_active_sessions(),
+            MAX_SESSIONS,
+        )
+        return AppSession(_release_session)
 
 
 def _set_pty_size(fd, rows, cols, pix_w=0, pix_h=0):
@@ -61,7 +102,7 @@ def _set_pty_size(fd, rows, cols, pix_w=0, pix_h=0):
 
 
 class AppSession(asyncssh.SSHServerSession):
-    def __init__(self):
+    def __init__(self, on_close):
         self._chan = None
         self._pty_manager = None
         self._pty_subsidiary = None
@@ -70,6 +111,8 @@ class AppSession(asyncssh.SSHServerSession):
         self._wait_task = None
         self._term_type = None
         self._term_size = None
+        self._on_close = on_close
+        self._released = False
 
     def connection_made(self, chan):
         self._chan = chan
@@ -166,6 +209,10 @@ class AppSession(asyncssh.SSHServerSession):
             logging.info("session end user=%s client=%s reason=%s", user, peer, exc)
         else:
             logging.info("session end user=%s client=%s", user, peer)
+        if not self._released:
+            self._released = True
+            self._on_close()
+            logging.info("session count active=%s max=%s", _get_active_sessions(), MAX_SESSIONS)
 
 async def main():
     # Generate a temp host key if not present
