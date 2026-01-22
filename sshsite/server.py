@@ -8,7 +8,7 @@ from pathlib import Path
 BASE = Path(__file__).resolve().parent
 APP = BASE / "app.py"
 
-LOG_PATH = BASE / "server.log"
+LOG_PATH = BASE / "logs/server.log"
 
 HOST = os.environ.get("SSH_HOST", "127.0.0.1")
 PORT = int(os.environ.get("SSH_PORT", "3333"))

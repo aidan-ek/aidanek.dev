@@ -2,7 +2,18 @@ from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer, Static
 from textual.binding import Binding
 
-HOME = "Welcome to aidanek.dev\n\nPress ? for help\n"
+HOME = """Welcome to aidanek.dev\n\nPress ? for help\n
+
+
+    .              .oooo.   oooo
+  .o8            .dP""Y88b  `888
+.o888oo oooo d8b       ]8P'  888  oooo
+  888   `888""8P     <88b.   888 .8P'
+  888    888          `88b.  888888.
+  888 .  888     o.   .88P   888 `88b.
+  "888" d888b    `8bd88P'   o888o o888o
+
+"""
 
 HELP = """Keybinds
 h  Home
