@@ -223,20 +223,19 @@ class AppSession(asyncssh.SSHServerSession):
 
 async def main():
     # Generate a temp host key if not present
-    key_path = HOST_KEY_PATH
-    if not key_path.exists():
+    if not HOST_KEY_PATH.exists():
         key = asyncssh.generate_private_key("ssh-ed25519")
-        key_path.write_text(key.export_private_key("openssh").decode())
+        HOST_KEY_PATH.write_bytes(key.export_private_key("openssh"))
     try:
-        os.chmod(key_path, 0o600)
+        os.chmod(HOST_KEY_PATH, 0o600)
     except OSError:
-        logging.warning("unable to set permissions on host key path=%s", key_path)
+        logging.warning("unable to set permissions on host key path=%s", HOST_KEY_PATH)
 
     await asyncssh.create_server(
         Server,
         host=HOST,
         port=PORT,
-        server_host_keys=[str(key_path)],
+        server_host_keys=[str(HOST_KEY_PATH)],
         allow_scp=False,
     )
     
