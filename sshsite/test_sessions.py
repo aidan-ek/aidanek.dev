@@ -4,8 +4,8 @@ import os
 import time
 import asyncssh
 
-DEFAULT_HOST = "127.0.0.1"
-DEFAULT_PORT = 3333
+DEFAULT_HOST = os.environ.get("SSH_HOST", "127.0.0.1")
+DEFAULT_PORT = int(os.environ.get("SSH_PORT", "3333"))
 
 async def _open_session(host, port, username, hold_seconds, idx):
     conn = None

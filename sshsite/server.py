@@ -1,4 +1,5 @@
-import asyncio, asyncssh, os, subprocess, sys, pty, fcntl, termios, struct
+import asyncio, asyncssh
+import os, subprocess, sys, pty, fcntl, termios, struct
 import threading
 import logging
 from logging.handlers import RotatingFileHandler
@@ -8,6 +9,10 @@ BASE = Path(__file__).resolve().parent
 APP = BASE / "app.py"
 
 LOG_PATH = BASE / "server.log"
+
+HOST = os.environ.get("SSH_HOST", "127.0.0.1")
+PORT = int(os.environ.get("SSH_PORT", "3333"))
+HOST_KEY_PATH = Path(os.environ.get("SSH_HOST_KEY", str(BASE / "dev_host_key")))
 
 _handler = RotatingFileHandler(LOG_PATH, maxBytes=1_000_000, backupCount=3)
 _formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
@@ -203,6 +208,8 @@ class AppSession(asyncssh.SSHServerSession):
             except OSError:
                 pass
             self._pty_manager = None
+            
+        # extra info collection for logging
         peer = self._chan.get_extra_info("peername") if self._chan else None
         user = self._chan.get_extra_info("username") if self._chan else None
         if exc:
@@ -216,19 +223,28 @@ class AppSession(asyncssh.SSHServerSession):
 
 async def main():
     # Generate a temp host key if not present
-    key_path = BASE / "dev_host_key"
+    key_path = HOST_KEY_PATH
     if not key_path.exists():
         key = asyncssh.generate_private_key("ssh-ed25519")
         key_path.write_text(key.export_private_key("openssh").decode())
+    try:
+        os.chmod(key_path, 0o600)
+    except OSError:
+        logging.warning("unable to set permissions on host key path=%s", key_path)
 
     await asyncssh.create_server(
         Server,
-        host="127.0.0.1",
-        port=3333,
+        host=HOST,
+        port=PORT,
         server_host_keys=[str(key_path)],
         allow_scp=False,
     )
-    print("Listening on ssh://127.0.0.1:3333")
+    
+    if HOST in {"127.0.0.1", "::1", "localhost"}:
+        logging.warning(
+            "host is loopback; set SSH_HOST=0.0.0.0 to accept public connections"
+        )
+    print(f"Listening on ssh://{HOST}:{PORT}")
     await asyncio.Future()
 
 if __name__ == "__main__":
