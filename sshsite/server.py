@@ -14,6 +14,9 @@ HOST = os.environ.get("SSH_HOST", "127.0.0.1")
 PORT = int(os.environ.get("SSH_PORT", "3333"))
 HOST_KEY_PATH = Path(os.environ.get("SSH_HOST_KEY", str(BASE / "dev_host_key")))
 
+# create logs directory if it doesn't exist
+LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+
 _handler = RotatingFileHandler(LOG_PATH, maxBytes=1_000_000, backupCount=3)
 _formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
 _handler.setFormatter(_formatter)
