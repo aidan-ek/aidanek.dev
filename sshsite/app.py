@@ -2,6 +2,7 @@ from random import randint, random
 import time
 from typing import Iterable
 
+from rich.style import Style
 from rich.text import Text
 from textual.app import App, ComposeResult, SystemCommand
 from textual.binding import Binding
@@ -9,7 +10,9 @@ from textual.theme import Theme
 
 from textual.widgets import Header, Footer, Static
 
-HOME = """Welcome to aidanek.dev\n\nPress ? for help\n
+HOME = r"""Welcome to aidanek.dev
+
+Press ? for help
 
        .__    .___                     __            .___           
 _____  |__| __| _/____    ____   ____ |  | __      __| _/_______  __
@@ -24,10 +27,28 @@ _____  |__| __| _/____    ____   ____ |  | __      __| _/_______  __
 HELP = """Keybinds
 h  Home
 ?  Help
+ r  Resume
 q  Quit
 """
 
-SPLASH = """
+RESUME = """Aidan Elliott
+
+Security · Systems · Networking
+
+Skills
+
+Python, C, Linux, Server Hardening, Binary Exploitation
+
+Projects
+
+- aidanek.dev interactive portfolio (asyncssh, Textual)
+
+- SSH config command line utility
+
+Full resume (PDF): https://aidanek.dev/resume.pdf
+"""
+
+SPLASH = r"""
 ====================================================================
        .__    .___                     __            .___           
 _____  |__| __| _/____    ____   ____ |  | __      __| _/_______  __
@@ -208,6 +229,7 @@ class SshSite(App):
     BINDINGS = [
         Binding("h", "home", "Home"),
         Binding("question_mark", "help", "Help"),
+        Binding("r", "resume", "Resume"),
         Binding("q", "quit", "Quit"),
     ]
 
@@ -254,6 +276,23 @@ class SshSite(App):
 
     def action_help(self) -> None:
         self.body.update(HELP)
+
+    def action_resume(self) -> None:
+        text = Text(RESUME)
+        name_line = "Aidan Elliott"
+        for line in [name_line]:
+            start = RESUME.find(line)
+            if start != -1:
+                text.stylize(Style(bold=True, color="#ff6a00"), start, start + len(line))
+        for title in ["Skills", "Projects", "Full resume (PDF)"]:
+            start = RESUME.find(title)
+            if start != -1:
+                text.stylize(Style(color="#ff6a00"), start, start + len(title))
+        link = "https://aidanek.dev/resume.pdf"
+        start = RESUME.find(link)
+        if start != -1:
+            text.stylize(f"link {link}", start, start + len(link))
+        self.body.update(text)
 
     def get_system_commands(self, screen) -> Iterable[SystemCommand]:
         yield SystemCommand("Quit", "Exit the app", self.exit)
