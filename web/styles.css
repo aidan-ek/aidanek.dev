@@ -54,10 +54,21 @@ header {
 }
 
 .logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   font-size: 24pt;
   font-weight: 700;
   color: var(--primary);
   letter-spacing: 0.05em;
+}
+
+.logo-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px;
 }
 
 .nav {
@@ -117,6 +128,14 @@ header {
   margin: 0 auto;
   padding: 40px 6vw;
   animation: fade-up 0.9s ease both;
+}
+
+.content-panel {
+  max-width: 980px;
+  margin: 36px auto 48px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 22px;
+  padding: 8px 0 20px;
 }
 
 .about {
@@ -201,23 +220,28 @@ header {
   padding: 20px 24px;
   font-family: "JetBrains Mono", "Courier New", monospace;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+  margin: 0 auto;
+  max-width: 720px;
+  overflow-wrap: anywhere;
 }
 
 .fingerprint {
   color: var(--muted);
   margin: 0 0 16px;
   white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .prompt {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 0px;
   color: #ffffff;
 }
 
 .prompt-symbol {
   color: #ffffff;
+  margin-right: 6px;
 }
 
 .typed {
@@ -234,7 +258,7 @@ header {
   width: 10px;
   height: 20px;
   background: #ffffff;
-  margin-left: 2px;
+  margin-left: 1px;
   animation: blink 0.8s step-end infinite;
 }
 
